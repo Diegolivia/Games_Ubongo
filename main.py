@@ -103,6 +103,8 @@ class Table:
         pass
 
     def LoadTablero(self):
+        self.mtx_Tab=[]
+        self.mtx_1stTab=[]
         with open("res/data/Tablero.txt", "r") as f:
             for a in range(6):
                 x=f.readline()
@@ -225,10 +227,13 @@ class Player:
         file.write(",".join(line) + "\n")
 
     def LoadPlayer(self,file):
-        self.Turn=file.read()
-        self.numMov=file.read()
-        self.Color=file.read()
-        self.Position=file.read().strip()
+        self.Turn=int(file.read(1).strip())
+        self.numMov=int(file.read(1).strip())
+        self.Color=int(file.read(1).strip())
+        self.Position=int(file.read(1).strip())
+        file.readline()
+        line = file.readline().strip().split(',')
+        self.Mochila=list(map(int,line))
         pass
 
 class AIPlayer(Player):
@@ -544,6 +549,8 @@ class GameEngine:
             self.timer.label.draw()
             if(not self.timer.running):
                 self.UpdateTurno()
+        if (self.GameState==2):
+            pyglet.text.Label("Juego terminado",x=window.width//2-200,y=window.height//2,font_size=50).draw()
 
     def UpdateLabels(self):
         self.lblRonda.text = 'RONDA: '+str(self.Ronda)
@@ -607,6 +614,7 @@ class GameEngine:
             f.write(str(self.numHuman)+"\n")
             for x in self.arrPlayers:
                 x.SavePlayer(f)
+        self.objTable.SaveTablero()
         pass
 
     def LoadState(self):
@@ -619,6 +627,9 @@ class GameEngine:
             self.PopulatePlayers(self.mP,self.mPH)
             for x in self.arrPlayers:
                 x.LoadPlayer(f)
+        pass
+
+    def CheckWinner(self):
         pass
 
     def Revisar(self):
@@ -637,7 +648,9 @@ class GameEngine:
         self.objMinigame.LoadTemplate(1)
         self.objTable.LoadTablero()
         self.LoadState()
+        self.UpdateLabels()
         pass
+
 # Cargar Las imagenes ---> Modificar para cargar un res library
 imgBackground = pyglet.image.load('res\img\Background.png')
 # Tamaño original Table 1801*608
@@ -705,6 +718,8 @@ def on_key_press(symbol, modifiers):
         engine.MoverPersonaje(-1)
     elif symbol == key.O:
         engine.Revisar()
+    elif symbol == key.SPACE:
+        engine.GameState=0
 
 @window.event
 def on_draw():
