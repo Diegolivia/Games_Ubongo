@@ -57,7 +57,6 @@ class Table:
         # Tablero
         self.mtx_Tab = []
         self.mtx_1stTab = []
-        self.FillTablero()
 
     def FillTablero(self):
         log_Gem = [0, 0, 0, 0, 0, 0]
@@ -85,6 +84,69 @@ class Table:
             self.mtx_1stTab.append(
                 [self.mtx_Tab[x][self.numPlayer], self.mtx_Tab[x][self.numPlayer+1], self.numPlayer])
 
+    def SaveTablero(self):
+        a = self.mtx_Tab
+        a1 = self.mtx_1stTab
+        with open("res/data/Tablero.txt", "w") as f:
+            for row in range(len(a)-1):
+                line = list(map(str, a[row]))
+                f.write(",".join(line) + "\n")
+            f.write(",".join(list(map(str, a[len(a)-1])))+"\n")
+            for row in range(len(a1)-1):
+                line = list(map(str, a1[row]))
+                f.write(",".join(line) + "\n")
+            f.write(",".join(list(map(str, a1[len(a1)-1]))))
+      
+    def NewTablero(self):
+        self.FillTablero()
+        self.SaveTablero()
+        pass
+
+    def LoadTablero(self):
+        with open("res/data/Tablero.txt", "r") as f:
+            for a in range(6):
+                x=f.readline()
+                x=x.strip().split(",")
+                for c in range(len(x)):
+                    if (x[c]=='A' or x[c]=='B' or x[c]=='C'or x[c]=='D'):
+                        pass
+                    else:
+                        x[c]=int(x[c])
+                self.mtx_Tab.append(x)
+            for a in range(6):
+                    x=f.readline()
+                    x=x.strip().split(",")
+                    for c in range(len(x)):
+                        if (x[c]=='A' or x[c]=='B' or x[c]=='C'or x[c]=='D'):
+                            pass
+                        else:
+                            x[c]=int(x[c])
+                    self.mtx_1stTab.append(x)
+        pass
+
+    # Mover al jugador actual, limpia la posicon actual y luego recoloca al jugador
+    def MovePlayer(self, player, mov):
+        self.curr = player
+        self.mtx_Tab[player.Position][player.Turn] = 0
+        player.UpdatePosition(mov)
+        self.mtx_Tab[player.Position][player.Turn] = self.arrP[player.Color]
+        self.ComerPiezas(player)
+
+    # Cada jugador come las dos primeras piezas de la posicon donde se encuentra
+    def ComerPiezas(self, player):
+        i = self.mtx_1stTab[player.Position][2]
+        if(i != 0 and i < 12+self.numPlayer):
+            player.AgregarGema(self.mtx_Tab[player.Position][i])
+            player.AgregarGema(self.mtx_Tab[player.Position][i+1])
+            self.mtx_Tab[player.Position][i] = 0
+            self.mtx_Tab[player.Position][i+1] = 0
+            if(i+2 == 12+self.numPlayer):
+                self.mtx_1stTab[player.Position] = [0, 0, 12+self.numPlayer]
+            else:
+                self.mtx_1stTab[player.Position] = [
+                    self.mtx_Tab[player.Position][i+2], self.mtx_Tab[player.Position][i+3], i+2]
+        pass
+    
     def Dibujar(self):
         self.spr_Tab.draw()
         # self.curr.Dibujar(self.row_Gem)
@@ -109,32 +171,8 @@ class Table:
                         var.scale = 0.08
                         var.draw()
 
-    # Mover al jugador actual, limpia la posicon actual y luego recoloca al jugador
-    def MovePlayer(self, player, mov):
-        self.curr = player
-        self.mtx_Tab[player.Position][player.Turn] = 0
-        player.UpdatePosition(mov)
-        self.mtx_Tab[player.Position][player.Turn] = self.arrP[player.Color]
-        self.ComerPiezas(player)
-
-    # Cada jugador come las dos primeras piezas de la posicon donde se encuentra
-    def ComerPiezas(self, player):
-        i = self.mtx_1stTab[player.Position][2]
-        if(i != 0 and i < 12+self.numPlayer):
-            player.AgregarGema(self.mtx_Tab[player.Position][i])
-            player.AgregarGema(self.mtx_Tab[player.Position][i+1])
-            self.mtx_Tab[player.Position][i] = 0
-            self.mtx_Tab[player.Position][i+1] = 0
-            if(i+2 == 12+self.numPlayer):
-                self.mtx_1stTab[player.Position] = [0, 0, 12+self.numPlayer]
-            else:
-                self.mtx_1stTab[player.Position] = [
-                    self.mtx_Tab[player.Position][i+2], self.mtx_Tab[player.Position][i+3], i+2]
-        pass
-
 class Player:
     def __init__(self, turn, position, color):
-        self.posMove = 0
         self.Turn = turn
         self.numMov = 0
         self.Color = color
@@ -176,6 +214,21 @@ class Player:
             currG.scale = 0.05
             currG.draw()
             label.draw()
+        pass
+
+    def SavePlayer(self,file):
+        file.write(str(self.Turn))
+        file.write(str(self.numMov))
+        file.write(str(self.Color))
+        file.write(str(self.Position)+"\n")
+        line = list(map(str,self.Mochila))
+        file.write(",".join(line) + "\n")
+
+    def LoadPlayer(self,file):
+        self.Turn=file.read()
+        self.numMov=file.read()
+        self.Color=file.read()
+        self.Position=file.read().strip()
         pass
 
 class AIPlayer(Player):
@@ -334,7 +387,7 @@ class MiniGame:
             return False
 
     #Genera las Plantillas utilizando las piezas entregadas
-    def GenerateTemplate(self):
+    def newTemplate(self):
         with open("res/data/Plantilla.txt", "w") as f:
             with open("res/data/PlantillaPieces.txt", "w") as fP:
                 for x in range(216):
@@ -385,16 +438,16 @@ class MiniGame:
                 PieceY-=190
         pass
     
-    def Revisar(self):
+    def CheckWin(self):
         #Comprobar si ganaste
         pass
 
 class GameEngine:
-    def __init__(self, nPl, nHu, mG, mP, mPH, mD,mPZ, iTab, iDice, iTesoro, iButton,iTimer,iMenu):
+    def __init__(self, nPl, nHu, mG, mP, mPH, mD,mPZ, iTab, iDice, iTesoro, iButton,iTimer,iMenu,iBckgr):
         super().__init__()
         #GameState=0 es menu, GameState=1 es jugando
         self.GameState=0
-        self.Ronda = 0
+        self.Ronda = 1
         self.Turno = 0
         self.numMinigame=1
         # Setup de Jugadores
@@ -404,7 +457,9 @@ class GameEngine:
         self.arrPlayers = []
         self.mtxPH = []
         self.mtxP = []
-        self.PopulatePlayers(mP, mPH)
+        self.mP=mP
+        self.mPH=mPH
+        self.PopulatePlayers(mP,mPH)
         # Visualizador de Stats
         self.lblRonda = pyglet.text.Label('RONDA: '+str(self.Ronda),
                                           font_name='Times New Roman',
@@ -441,6 +496,8 @@ class GameEngine:
         self.arr_Play_Timer=[0,0,0,0]
         #Menu
         self.sprMenu=pyglet.sprite.Sprite(iMenu)
+        #FondoJuego
+        self.sprBckr=pyglet.sprite.Sprite(iBckgr,0,0)
 
     def PopulatePlayers(self, mP, mPH):
         for i in range(self.numHuman):
@@ -463,7 +520,9 @@ class GameEngine:
         if(self.GameState==0):
             self.sprMenu.draw()
             pass
-        else:
+        elif (self.GameState==1):
+            #Fondo
+            self.sprBckr.draw()
             # Tablero
             self.objTable.Dibujar()
             # Dado
@@ -484,7 +543,7 @@ class GameEngine:
             self.timer.sprTimer.draw()
             self.timer.label.draw()
             if(not self.timer.running):
-                self.PerderTurno()
+                self.UpdateTurno()
 
     def UpdateLabels(self):
         self.lblRonda.text = 'RONDA: '+str(self.Ronda)
@@ -493,76 +552,92 @@ class GameEngine:
             str(self.arrPlayers[self.Turno].numMov)
         self.lblTurnH.image = self.mtxPH[self.Turno]
 
-    def SetTurno(self, turn):
-        if(turn <= self.numPlayers-1):
-            self.Turno = turn
-            self.arrPlayers[turn].SetMovimientos(1)
-            self.UpdateLabels()
-
     def MoverPersonaje(self, mov):
-        if(self.arrPlayers[self.Turno].numMov != 0):
-            self.objTable.MovePlayer(self.arrPlayers[self.Turno], mov)
-            self.arrPlayers[self.Turno].numMov -= 1
-            self.UpdateLabels()
-        pass
+        if(self.GameState==1):
+            if(self.arrPlayers[self.Turno].numMov != 0):
+                self.objTable.MovePlayer(self.arrPlayers[self.Turno], mov)
+                self.arrPlayers[self.Turno].numMov -= 1
+                self.UpdateLabels()
+            pass
 
     def CambiarRonda(self):
-        self.objDice.TirarDice()
-        self.Ronda+=1
-        self.Turno=0
-        mov=3
-        for au in range(3):
-            may=0
-            aux=0
-            for x in range(self.numPlayers):
-                if(self.arr_Play_Timer[x]>may):
-                    may=self.arr_Play_Timer[x]
-                    aux=x
-            self.arr_Play_Timer[aux]=0
-            self.arrPlayers[aux].SetMovimientos(mov)
-            if(mov!=0):
-                mov-=1
-        self.arr_Play_Timer = [0,0,0,0]
+        if(self.Ronda==5):
+            self.GameState=2
+        else:
+            self.objDice.TirarDice()
+            self.Ronda+=1
+            self.Turno=0
+            mov=3
+            for au in range(3):
+                may=0
+                aux=0
+                for x in range(self.numPlayers):
+                    if(self.arr_Play_Timer[x]>may):
+                        may=self.arr_Play_Timer[x]
+                        aux=x
+                self.arr_Play_Timer[aux]=0
+                self.arrPlayers[aux].SetMovimientos(mov)
+                if(mov!=0):
+                    mov-=1
+            self.arr_Play_Timer = [0,0,0,0]
         pass
-
-    def GanarTurno(self):
-        self.arr_Play_Timer[self.Turno]=self.timer.time
-        self.UpdateTurno()
-        pass
-
-    def PerderTurno(self):
-        self.arr_Play_Timer[self.Turno]=0
-        self.UpdateTurno()
 
     def UpdateTurno(self):
+        if(not self.timer.running):
+            self.arr_Play_Timer[self.Turno]=0
+        else:
+            self.arr_Play_Timer[self.Turno]=self.timer.time
         self.Turno+=1
-        self.numMinigame+=1
-        if(self.numMinigame>36):
-            self.numMinigame=0
         if(self.Turno==self.numPlayers):
             self.CambiarRonda()
-        self.objMinigame.LoadTemplate(self.numMinigame+self.objDice.currCara)
-        self.UpdateLabels()
-        self.timer.reset()
+        if(self.GameState==1):
+            self.objMinigame.LoadTemplate(self.Turno+self.objDice.currCara)
+            self.UpdateLabels()
+            self.timer.reset()
+            self.SaveState()
         pass
-    
-    def iniciarGame(self):
-        self.GameState=1
-        self.timer.reset()
-        self.objMinigame.GenerateTemplate()
 
-    def continuarGame(self):
-        self.GameState=1
-        self.timer.reset()
-        self.LoadState()
-        self.objMinigame.LoadTemplate(self.GanarTurno)
+    def SaveState(self):
+        with open("res/data/Engine.txt","w") as f:
+            #self.numPlayers = nPl
+            #self.numHuman = nHu
+            #SE GUARDA POR Ronda,  NP, nH, Pl->Moch, Tab, Mg
+            f.write(str(self.Ronda)+"\n")
+            f.write(str(self.numPlayers)+"\n")
+            f.write(str(self.numHuman)+"\n")
+            for x in self.arrPlayers:
+                x.SavePlayer(f)
+        pass
 
     def LoadState(self):
+        with open("res/data/Engine.txt","r")as f:
+            self.Ronda=int(f.readline().strip())
+            self.numPlayers=int(f.readline().strip())
+            self.numHuman=int(f.readline().strip())
+            self.numAI=self.numPlayers-self.numHuman
+            self.arrPlayers=[]
+            self.PopulatePlayers(self.mP,self.mPH)
+            for x in self.arrPlayers:
+                x.LoadPlayer(f)
         pass
 
     def Revisar(self):
         pass
 
+    def iniciarGame(self):
+        self.GameState=1
+        self.timer.reset()
+        self.objMinigame.newTemplate()
+        self.objTable.NewTablero()
+        self.SaveState()
+
+    def continuarGame(self):
+        self.GameState=1
+        self.timer.reset()
+        self.objMinigame.LoadTemplate(1)
+        self.objTable.LoadTablero()
+        self.LoadState()
+        pass
 # Cargar Las imagenes ---> Modificar para cargar un res library
 imgBackground = pyglet.image.load('res\img\Background.png')
 # Tamaño original Table 1801*608
@@ -609,9 +684,12 @@ mtx_PlayerHead = [imgPlayer5Head, imgPlayer1Head,
                   imgPlayer3Head, imgPlayer4Head, imgPlayer2Head]
 mtx_Piezas = [imgPiezaNegra,imgPiezaBlanca,imgPiezaRoja]
 
-sprBck = pyglet.sprite.Sprite(imgBackground, 0, 0)
+
+#El numero de jugadores requiere agregarlos manualmente
+Numplayer=4
+NumHumanos=4
 engine = GameEngine(4, 4, mtx_Gem, mtx_Player, mtx_PlayerHead, mtx_Dice,mtx_Piezas,
-                    imgTable, imgDice, imgTesoro, imgButton,imgTimer,imgMenu)
+                    imgTable, imgDice, imgTesoro, imgButton,imgTimer,imgMenu,imgBackground)
 
 clock = pyglet.clock.Clock()
 
@@ -625,26 +703,14 @@ def on_key_press(symbol, modifiers):
         engine.MoverPersonaje(1)
     elif symbol == key.S:
         engine.MoverPersonaje(-1)
-    elif symbol == key.P:
-        engine.PerderTurno()
     elif symbol == key.O:
-        engine.GanarTurno()
+        engine.Revisar()
 
 @window.event
 def on_draw():
     window.clear()
-    sprBck.draw()
     engine.Dibujar()
     fps_display.draw()
-    #Piezas de la plantilla
-    draw_rect(845,285,155,185)
-    draw_rect(1010,285,155,185)
-    draw_rect(845,479,155,185)
-    draw_rect(1010,479,155,185)
-    #Botones del menu
-    #draw_rect(530,330,540,60)
-    #draw_rect(530,220,540,60)
-    #draw_rect(530,120,540,60)
     
 @window.event
 def on_mouse_press(x, y, button, modifiers):
@@ -659,9 +725,7 @@ def on_mouse_press(x, y, button, modifiers):
                 window.close()
         elif(engine.GameState==1):
             if((x>=350 and x<=820) and (y>=70 and y<=300)):
-                engine.GanarTurno()
-        
-            
-        
+                engine.UpdateTurno()
+                    
 pyglet.clock.schedule_interval(engine.timer.update, 1)
 pyglet.app.run()
