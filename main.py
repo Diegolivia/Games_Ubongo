@@ -5,8 +5,6 @@ from pyglet.window import mouse
 from random import randint, choice
 import random as rand
 import linecache
-import os
-import sys
 
 window = pyglet.window.Window(1600, 1024)
 fps_display = FPSDisplay(window)
